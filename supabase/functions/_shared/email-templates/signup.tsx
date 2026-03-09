@@ -27,31 +27,32 @@ export const SignupEmail = ({
   recipient,
   confirmationUrl,
 }: SignupEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="da" dir="ltr">
     <Head />
-    <Preview>Confirm your email for {siteName}</Preview>
+    <Preview>Bekræft din email for Plutonic Media</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email</Heading>
+        <Text style={brand}>Plutonic Media</Text>
+        <Heading style={h1}>Bekræft din email</Heading>
         <Text style={text}>
-          Thanks for signing up for{' '}
+          Tak fordi du har oprettet en konto hos{' '}
           <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
+            <strong>Plutonic Media</strong>
           </Link>
-          !
+          .
         </Text>
         <Text style={text}>
-          Please confirm your email address (
+          Bekræft venligst din email (
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
           </Link>
-          ) by clicking the button below:
+          ) ved at klikke på knappen herunder:
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Verify Email
+          Bekræft Email
         </Button>
         <Text style={footer}>
-          If you didn't create an account, you can safely ignore this email.
+          Hvis du ikke har oprettet en konto, kan du roligt ignorere denne email.
         </Text>
       </Container>
     </Body>
@@ -60,27 +61,39 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'DM Sans', Arial, sans-serif" }
+const container = { padding: '40px 25px' }
+const brand = {
+  fontSize: '18px',
+  fontWeight: 'bold' as const,
+  fontFamily: "'Space Grotesk', Arial, sans-serif",
+  color: '#093128',
+  margin: '0 0 30px',
+  letterSpacing: '-0.02em',
+}
 const h1 = {
   fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
+  fontWeight: '600' as const,
+  fontFamily: "'Space Grotesk', Arial, sans-serif",
+  color: '#093128',
   margin: '0 0 20px',
+  letterSpacing: '-0.02em',
 }
 const text = {
   fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
+  color: '#526b64',
+  lineHeight: '1.6',
   margin: '0 0 25px',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const link = { color: '#093128', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
+  backgroundColor: '#093128',
+  color: '#EBFBF7',
   fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontWeight: '600' as const,
+  fontFamily: "'Space Grotesk', Arial, sans-serif",
+  borderRadius: '10px',
+  padding: '12px 24px',
   textDecoration: 'none',
 }
 const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
