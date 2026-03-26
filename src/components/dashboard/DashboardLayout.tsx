@@ -55,12 +55,14 @@ export function DashboardLayout(props: DashboardLayoutProps) {
         selectedProject={props.selectedProject}
         onSelectProject={props.onSelectProject}
         onAddProject={props.onAddProject}
+        onDeleteProject={props.onDeleteProject}
         scrapedProduct={props.scrapedProduct}
         onScraped={props.onScraped}
         productImages={props.productImages}
         onProductImagesChange={props.onProductImagesChange}
         modelImages={props.modelImages}
         onModelImagesChange={props.onModelImagesChange}
+        onSignOut={props.onSignOut}
       />
       <CanvasColumn
         images={props.images}
