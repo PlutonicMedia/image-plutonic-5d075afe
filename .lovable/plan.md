@@ -1,104 +1,85 @@
 
 
-# Phase 1: Auth, Scoped Database & Deletion Management
+# Phase 1 Refinement: Intelligent Control Panel & AI Edge Functions
 
-## What Already Exists
-- Auth page at `/auth` with sign in/sign up forms
-- Auth state check in `Index.tsx` that redirects to `/auth` if no session
-- `customers` table used for clients (code types as `Client`)
-- `projects` table with `customer_id` FK to customers
-- `generations` table with `project_id`
-- `saved_models` table (id, user_id, name, image_url — no scope columns)
-- Client deletion in `ClientProjectSelector` with confirmation dialog
-- No project deletion UI
-- No sign out button anywhere
+## Overview
+Replace the multi-dropdown Control Panel with a prompt-first design, add AI-powered prompt optimization, create a dedicated ad copy function, and enhance the Lightbox.
 
 ---
 
-## 1. Sign Out Button
+## 1. Control Panel Redesign (`ControlColumn.tsx`)
 
-Add a sign out button to the `InputColumn` header area (next to "Plutonic Media" branding). Small `LogOut` icon button that calls `supabase.auth.signOut()` and navigates to `/auth`.
+**Remove:** Scene Template dropdown, Style Preset dropdown, Camera Lens/Angle dropdowns, and all sub-option grids.
 
-**Files:** `InputColumn.tsx` — add `onSignOut` prop, render LogOut icon button in header. `Index.tsx` — pass sign out handler.
+**New layout (top to bottom):**
+1. **Prompt textarea** — large, prominent, multi-language free-text. Label: "Prompt". Replaces both the old "Influence Prompt" and all preset selectors.
+2. **"AI Optimize" button** — next to textarea. Calls the new `optimize-prompt` edge function. When response arrives, the optimized prompt replaces the textarea content (user can edit further). Show a loading spinner while processing.
+3. **Scoped Pickers** — two collapsible sections ("Saved Models" and "Saved Prompts"), each with tabs: Global | Client | Project. Uses `useScopedData` hook. Selecting a prompt appends it to the textarea; selecting a model sets it as a reference image.
+4. **Output Settings** — Aspect Ratio buttons, Quality, Format, Outputs slider, Grid toggle, Draft Mode toggle (unchanged).
+5. **Ad Copy Display** — unchanged.
+6. **Generate Button** — unchanged.
 
-## 2. Protected Route (Already Done — Verify)
+**Props change:** Remove `selectedStyle`, `onStyleChange`, `styleSubOptions`, `onStyleSubOptionsChange`, `selectedJsonPrompt`, `onJsonPromptChange`, `influencePrompt`, `onInfluencePromptChange`. Replace with single `prompt` / `onPromptChange` pair. Add `userId`, `clientId`, `projectId` for scoped pickers.
 
-`Index.tsx` already redirects to `/auth` when no session. Auth page already exists. Just verify the flow is solid — no changes needed unless broken.
+**DashboardLayout & Index.tsx:** Update props accordingly. Replace `influencePrompt` state with `prompt`. Remove style/jsonPrompt state. Update `handleGenerate` validation.
 
-## 3. Database Migration: Scoped Tables
+## 2. Prompt Compiler Update (`promptCompiler.ts`)
 
-**Migration SQL:**
+**New interface `CompilerInput`:**
+- Remove `style`, `subOptions`, `customPrompt`, `jsonPrompt`, `influencePrompt`
+- Add `prompt` (the user's free-text, possibly AI-optimized)
+- Add optional `aiOptimized?: { scene_description, lighting_style, camera_lens, camera_angle, artistic_style }`
+- Keep `scrapedUsps`, `hasProductImage`, `hasModelImage`, `aspectRatio`
 
-```sql
--- Add scope columns to saved_models
-ALTER TABLE saved_models
-  ADD COLUMN IF NOT EXISTS client_id uuid,
-  ADD COLUMN IF NOT EXISTS project_id uuid,
-  ADD COLUMN IF NOT EXISTS scope text NOT NULL DEFAULT 'global',
-  ADD COLUMN IF NOT EXISTS metadata jsonb;
+**New compilation order:**
+1. If `aiOptimized` fields exist, prepend structured instructions (scene, lighting, lens, angle, artistic style)
+2. Append user prompt
+3. Append camera angle instruction (if set in settings)
+4. Append scraped USPs
+5. Append 1:1 consistency block (if product images)
+6. Append aspect ratio, global constraint, negative prompt
 
--- Create saved_prompts table
-CREATE TABLE saved_prompts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  client_id uuid,
-  project_id uuid,
-  scope text NOT NULL DEFAULT 'global',
-  name text NOT NULL,
-  content text NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+**Remove:** `getStylePrompt`, `compileJsonPrompt`, `STYLE_SUB_OPTIONS` usage. Keep `getCameraInstruction`, `getCameraAngleInstruction`, `getContextInjection`, `getShadowReflectionMapping` (still useful for product images).
 
-ALTER TABLE saved_prompts ENABLE ROW LEVEL SECURITY;
+## 3. `optimize-prompt` Edge Function (NEW)
 
--- RLS for saved_prompts (same pattern as saved_models)
-CREATE POLICY "Users can view own saved_prompts" ON saved_prompts
-  FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can create own saved_prompts" ON saved_prompts
-  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own saved_prompts" ON saved_prompts
-  FOR UPDATE TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own saved_prompts" ON saved_prompts
-  FOR DELETE TO authenticated USING (auth.uid() = user_id);
-```
+**File:** `supabase/functions/optimize-prompt/index.ts`
 
-## 4. Project Deletion in ClientProjectSelector
+- Receives `{ prompt: string }` from client
+- Calls Gemini 2.5 Flash via Lovable AI gateway with tool calling
+- Tool schema returns: `{ scene_description, lighting_style, camera_lens, camera_angle, artistic_style }`
+- System prompt: "You are a professional commercial photography prompt engineer. Analyze the user's intent and return structured scene parameters."
+- Returns the JSON to the client
+- Add to `supabase/config.toml` with `verify_jwt = false`
 
-Add a `Trash2` icon next to the selected project (same pattern as client delete). Add `onDeleteProject` prop. Confirmation dialog: "Delete [project name]? This will remove all associated generations."
+## 4. `generate-ad-copy` Edge Function (NEW)
 
-**Files:** `ClientProjectSelector.tsx` — add `onDeleteProject` prop, trash icon, alert dialog for projects. `DashboardLayout.tsx` — pass through `onDeleteProject`. `Index.tsx` — implement `deleteProject` handler that deletes from `projects` table, clears selection.
+**File:** `supabase/functions/generate-ad-copy/index.ts`
 
-## 5. Cascading Client Delete
+- Receives `{ product_name, description, usps }` from client
+- Calls Gemini 2.5 Flash via tool calling
+- Tool schema returns: `{ headline, body, cta }`
+- System prompt: "Expert ad copywriter. Write punchy, conversion-focused copy."
+- Separate from generate-creative (decoupled ad copy generation)
+- Add to `supabase/config.toml`
+- Update `AdCopy` type: rename `hook` to `headline`
 
-The `customers` table doesn't have FK cascading to `projects` or `generations`. The `deleteClient` handler in `Index.tsx` needs to manually delete associated data before deleting the client:
+## 5. Grid & Draft Mode Fixes (`generate-creative/index.ts`)
 
-```typescript
-// Delete generations for all projects under this client
-const { data: clientProjects } = await supabase.from('projects').select('id').eq('customer_id', id);
-if (clientProjects?.length) {
-  const projectIds = clientProjects.map(p => p.id);
-  await supabase.from('generations').delete().in('project_id', projectIds);
-}
-// Delete projects
-await supabase.from('projects').delete().eq('customer_id', id);
-// Delete client
-await supabase.from('customers').delete().eq('id', id);
-```
+- If `isGrid === true`, prepend: `"MANDATORY: Output a single image divided into a perfect 2x2 grid containing 4 different variations of the subject."`
+- If `draftMode === true`, append to system prompt: `"Output at 512x512 resolution for quick draft preview."`
+- Both already partially implemented — just ensure the prepend is explicit and resolution instruction is in system prompt.
 
-## 6. useScopedData Hook
+## 6. Scrape-Product Error Handling (`scrape-product/index.ts`)
 
-Create `src/hooks/useScopedData.ts`:
-- Accepts `userId`, `clientId`, `projectId`
-- Fetches `saved_models` and `saved_prompts` filtered by scope hierarchy:
-  - Global: `scope = 'global' AND user_id = uid`
-  - Client: above + `scope = 'client' AND client_id = selectedClient`
-  - Project: above + `scope = 'project' AND project_id = selectedProject`
-- Returns merged lists + save/delete functions with scope assignment
-- Uses `useEffect` to refetch when client/project selection changes
+Already has fallback logic. Verify: on Firecrawl failure, return `{ product_name: "", description: "", usps: [] }` with 200 status (not error status). Currently returns fallback with placeholder text — change to empty strings so UI shows blank editable fields.
 
-## 7. Customer → Client Audit
+## 7. Lightbox Enhancement (`Lightbox.tsx`)
 
-Search codebase for any remaining "customer" or "Customer" references in UI labels, comments, and variable names. Fix any found.
+- Add keyboard navigation: `useEffect` with `keydown` listener for ArrowLeft, ArrowRight, Escape
+- Make overlay truly full-screen (already is, but increase image max-height to `80vh`)
+- Add click-to-zoom: toggle between `object-contain` and `object-cover` / scrollable full-res on click
+- Add zoom state with `cursor-zoom-in` / `cursor-zoom-out`
 
 ---
 
@@ -106,10 +87,16 @@ Search codebase for any remaining "customer" or "Customer" references in UI labe
 
 | Action | File |
 |--------|------|
-| Edit | `src/components/dashboard/InputColumn.tsx` — sign out button |
-| Edit | `src/components/dashboard/ClientProjectSelector.tsx` — project delete |
-| Edit | `src/components/dashboard/DashboardLayout.tsx` — pass new props |
-| Edit | `src/pages/Index.tsx` — sign out, cascading delete, project delete |
-| Create | `src/hooks/useScopedData.ts` |
-| Migration | Add scope columns to saved_models, create saved_prompts |
+| Rewrite | `src/components/dashboard/ControlColumn.tsx` |
+| Edit | `src/components/dashboard/DashboardLayout.tsx` — simplified props |
+| Edit | `src/pages/Index.tsx` — remove style/jsonPrompt state, add prompt state |
+| Rewrite | `src/lib/promptCompiler.ts` — new compilation logic |
+| Edit | `src/types/index.ts` — add `AiOptimizedPrompt` type, rename `hook` → `headline` in AdCopy |
+| Edit | `src/hooks/useGeneration.ts` — accept new prompt structure |
+| Create | `supabase/functions/optimize-prompt/index.ts` |
+| Create | `supabase/functions/generate-ad-copy/index.ts` |
+| Edit | `supabase/functions/generate-creative/index.ts` — grid/draft fixes |
+| Edit | `supabase/functions/scrape-product/index.ts` — empty fallback |
+| Edit | `supabase/config.toml` — add new functions |
+| Edit | `src/components/generator/Lightbox.tsx` — keyboard + zoom |
 
