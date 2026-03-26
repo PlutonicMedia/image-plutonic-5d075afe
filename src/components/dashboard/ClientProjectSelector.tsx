@@ -96,9 +96,16 @@ export function ClientProjectSelector({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <Label className="text-xs font-medium text-muted-foreground">Project</Label>
-            <button onClick={() => { setAddingProject(true); setAddingClient(false); setNewName(''); }} className="text-xs text-primary hover:underline flex items-center gap-0.5">
-              <Plus className="w-3 h-3" /> New
-            </button>
+            <div className="flex items-center gap-2">
+              {selectedProject && (
+                <button onClick={() => setDeleteProjectTarget(selectedProject)} className="text-xs text-destructive hover:underline flex items-center gap-0.5">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+              <button onClick={() => { setAddingProject(true); setAddingClient(false); setNewName(''); }} className="text-xs text-primary hover:underline flex items-center gap-0.5">
+                <Plus className="w-3 h-3" /> New
+              </button>
+            </div>
           </div>
           {addingProject ? (
             <div className="flex gap-1.5">
