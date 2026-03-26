@@ -140,9 +140,9 @@ serve(async (req) => {
       console.error("AI gateway error:", aiResponse.status, text);
       // Fallback on AI failure
       return new Response(JSON.stringify({
-        product_name: "Unknown Product",
-        description: "AI extraction failed. Edit the details manually.",
-        usps: ["Quality craftsmanship", "Premium materials", "Modern design"],
+        product_name: "",
+        description: "",
+        usps: [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
