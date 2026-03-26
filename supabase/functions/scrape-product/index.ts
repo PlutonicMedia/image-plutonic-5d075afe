@@ -69,9 +69,9 @@ serve(async (req) => {
     if (!markdown) {
       // Return fallback if no content
       return new Response(JSON.stringify({
-        product_name: "Unknown Product",
-        description: "No content found at the provided URL.",
-        usps: ["Quality craftsmanship", "Premium materials", "Modern design"],
+        product_name: "",
+        description: "",
+        usps: [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
