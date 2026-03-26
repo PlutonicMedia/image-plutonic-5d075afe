@@ -289,24 +289,69 @@ export type Database = {
       }
       saved_models: {
         Row: {
+          client_id: string | null
           created_at: string
           id: string
           image_url: string
+          metadata: Json | null
           name: string
+          project_id: string | null
+          scope: string
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           id?: string
           image_url: string
+          metadata?: Json | null
           name: string
+          project_id?: string | null
+          scope?: string
           user_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           id?: string
           image_url?: string
+          metadata?: Json | null
           name?: string
+          project_id?: string | null
+          scope?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_prompts: {
+        Row: {
+          client_id: string | null
+          content: string
+          created_at: string
+          id: string
+          name: string
+          project_id: string | null
+          scope: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          name: string
+          project_id?: string | null
+          scope?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          name?: string
+          project_id?: string | null
+          scope?: string
           user_id?: string
         }
         Relationships: []
