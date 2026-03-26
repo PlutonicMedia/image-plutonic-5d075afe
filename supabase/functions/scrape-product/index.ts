@@ -58,9 +58,9 @@ serve(async (req) => {
       console.error("Scrape step failed:", scrapeErr);
       // Return fallback neutral context instead of crashing
       return new Response(JSON.stringify({
-        product_name: "Unknown Product",
-        description: "Could not extract product details from URL.",
-        usps: ["Quality craftsmanship", "Premium materials", "Modern design"],
+        product_name: "",
+        description: "",
+        usps: [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
