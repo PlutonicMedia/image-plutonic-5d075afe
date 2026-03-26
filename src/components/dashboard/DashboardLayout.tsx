@@ -13,12 +13,14 @@ interface DashboardLayoutProps {
   selectedProject: Project | null;
   onSelectProject: (p: Project | null) => void;
   onAddProject: (name: string) => void;
+  onDeleteProject: (id: string) => void;
   scrapedProduct: ScrapedProduct | null;
   onScraped: (data: ScrapedProduct | null) => void;
   productImages: string[];
   onProductImagesChange: (imgs: string[]) => void;
   modelImages: string[];
   onModelImagesChange: (imgs: string[]) => void;
+  onSignOut: () => void;
   images: GeneratedImage[];
   onImageClick: (image: GeneratedImage) => void;
   onDownloadSelected: (images: GeneratedImage[]) => void;
@@ -53,12 +55,14 @@ export function DashboardLayout(props: DashboardLayoutProps) {
         selectedProject={props.selectedProject}
         onSelectProject={props.onSelectProject}
         onAddProject={props.onAddProject}
+        onDeleteProject={props.onDeleteProject}
         scrapedProduct={props.scrapedProduct}
         onScraped={props.onScraped}
         productImages={props.productImages}
         onProductImagesChange={props.onProductImagesChange}
         modelImages={props.modelImages}
         onModelImagesChange={props.onModelImagesChange}
+        onSignOut={props.onSignOut}
       />
       <CanvasColumn
         images={props.images}

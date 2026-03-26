@@ -85,6 +85,13 @@ export default function Index() {
   };
 
   const deleteClient = async (id: string) => {
+    // Cascading delete: generations → projects → client
+    const { data: clientProjects } = await supabase.from('projects').select('id').eq('customer_id', id);
+    if (clientProjects?.length) {
+      const projectIds = clientProjects.map(p => p.id);
+      await supabase.from('generations').delete().in('project_id', projectIds);
+    }
+    await supabase.from('projects').delete().eq('customer_id', id);
     const { error } = await supabase.from('customers').delete().eq('id', id);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -97,6 +104,23 @@ export default function Index() {
       setProjects([]);
     }
     toast({ title: 'Client deleted' });
+  };
+
+  const deleteProject = async (id: string) => {
+    await supabase.from('generations').delete().eq('project_id', id);
+    const { error } = await supabase.from('projects').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    if (selectedProject?.id === id) setSelectedProject(null);
+    toast({ title: 'Project deleted' });
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
   };
 
   const addProject = async (name: string) => {
@@ -199,12 +223,14 @@ export default function Index() {
         selectedProject={selectedProject}
         onSelectProject={setSelectedProject}
         onAddProject={addProject}
+        onDeleteProject={deleteProject}
         scrapedProduct={scrapedProduct}
         onScraped={setScrapedProduct}
         productImages={productImages}
         onProductImagesChange={setProductImages}
         modelImages={modelImages}
         onModelImagesChange={setModelImages}
+        onSignOut={handleSignOut}
         images={allResults}
         onImageClick={setLightboxImage}
         onDownloadSelected={handleDownloadSelected}

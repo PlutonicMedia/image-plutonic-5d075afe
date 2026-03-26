@@ -1,4 +1,4 @@
-import { Image } from 'lucide-react';
+import { Image, LogOut } from 'lucide-react';
 import { Client, Project, ScrapedProduct } from '@/types';
 import { ClientProjectSelector } from './ClientProjectSelector';
 import { UrlScraper } from './UrlScraper';
@@ -14,28 +14,36 @@ interface InputColumnProps {
   selectedProject: Project | null;
   onSelectProject: (p: Project | null) => void;
   onAddProject: (name: string) => void;
+  onDeleteProject: (id: string) => void;
   scrapedProduct: ScrapedProduct | null;
   onScraped: (data: ScrapedProduct | null) => void;
   productImages: string[];
   onProductImagesChange: (imgs: string[]) => void;
   modelImages: string[];
   onModelImagesChange: (imgs: string[]) => void;
+  onSignOut: () => void;
 }
 
 export function InputColumn({
   clients, selectedClient, onSelectClient, onAddClient, onDeleteClient,
-  projects, selectedProject, onSelectProject, onAddProject,
+  projects, selectedProject, onSelectProject, onAddProject, onDeleteProject,
   scrapedProduct, onScraped,
   productImages, onProductImagesChange,
   modelImages, onModelImagesChange,
+  onSignOut,
 }: InputColumnProps) {
   return (
     <div className="w-[320px] shrink-0 border-r border-border bg-card overflow-y-auto scrollbar-thin">
       <div className="p-5 space-y-5">
         {/* Brand Header */}
-        <div>
-          <h1 className="text-lg font-display font-bold tracking-tight">Plutonic Media</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Creative Dashboard</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-display font-bold tracking-tight">Plutonic Media</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Creative Dashboard</p>
+          </div>
+          <button onClick={onSignOut} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground" title="Sign out">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Client & Project */}
@@ -43,7 +51,7 @@ export function InputColumn({
           clients={clients} selectedClient={selectedClient}
           onSelectClient={onSelectClient} onAddClient={onAddClient} onDeleteClient={onDeleteClient}
           projects={projects} selectedProject={selectedProject}
-          onSelectProject={onSelectProject} onAddProject={onAddProject}
+          onSelectProject={onSelectProject} onAddProject={onAddProject} onDeleteProject={onDeleteProject}
         />
 
         {/* URL Scraper */}

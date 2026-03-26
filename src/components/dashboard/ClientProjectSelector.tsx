@@ -19,16 +19,18 @@ interface ClientProjectSelectorProps {
   selectedProject: Project | null;
   onSelectProject: (p: Project | null) => void;
   onAddProject: (name: string) => void;
+  onDeleteProject: (id: string) => void;
 }
 
 export function ClientProjectSelector({
   clients, selectedClient, onSelectClient, onAddClient, onDeleteClient,
-  projects, selectedProject, onSelectProject, onAddProject,
+  projects, selectedProject, onSelectProject, onAddProject, onDeleteProject,
 }: ClientProjectSelectorProps) {
   const [addingClient, setAddingClient] = useState(false);
   const [addingProject, setAddingProject] = useState(false);
   const [newName, setNewName] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState<Project | null>(null);
 
   const handleAddClient = () => {
     if (newName.trim()) {
@@ -94,9 +96,16 @@ export function ClientProjectSelector({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <Label className="text-xs font-medium text-muted-foreground">Project</Label>
-            <button onClick={() => { setAddingProject(true); setAddingClient(false); setNewName(''); }} className="text-xs text-primary hover:underline flex items-center gap-0.5">
-              <Plus className="w-3 h-3" /> New
-            </button>
+            <div className="flex items-center gap-2">
+              {selectedProject && (
+                <button onClick={() => setDeleteProjectTarget(selectedProject)} className="text-xs text-destructive hover:underline flex items-center gap-0.5">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+              <button onClick={() => { setAddingProject(true); setAddingClient(false); setNewName(''); }} className="text-xs text-primary hover:underline flex items-center gap-0.5">
+                <Plus className="w-3 h-3" /> New
+              </button>
+            </div>
           </div>
           {addingProject ? (
             <div className="flex gap-1.5">
@@ -131,6 +140,24 @@ export function ClientProjectSelector({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => { if (deleteTarget) { onDeleteClient(deleteTarget.id); setDeleteTarget(null); } }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Project Confirmation */}
+      <AlertDialog open={!!deleteProjectTarget} onOpenChange={(open) => !open && setDeleteProjectTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteProjectTarget?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this project and all associated generations. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteProjectTarget) { onDeleteProject(deleteProjectTarget.id); setDeleteProjectTarget(null); } }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
