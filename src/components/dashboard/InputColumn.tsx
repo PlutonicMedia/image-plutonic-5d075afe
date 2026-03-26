@@ -1,4 +1,4 @@
-import { Image } from 'lucide-react';
+import { Image, LogOut } from 'lucide-react';
 import { Client, Project, ScrapedProduct } from '@/types';
 import { ClientProjectSelector } from './ClientProjectSelector';
 import { UrlScraper } from './UrlScraper';
@@ -14,12 +14,14 @@ interface InputColumnProps {
   selectedProject: Project | null;
   onSelectProject: (p: Project | null) => void;
   onAddProject: (name: string) => void;
+  onDeleteProject: (id: string) => void;
   scrapedProduct: ScrapedProduct | null;
   onScraped: (data: ScrapedProduct | null) => void;
   productImages: string[];
   onProductImagesChange: (imgs: string[]) => void;
   modelImages: string[];
   onModelImagesChange: (imgs: string[]) => void;
+  onSignOut: () => void;
 }
 
 export function InputColumn({
