@@ -6,7 +6,7 @@ import { Lightbox } from '@/components/generator/Lightbox';
 import { LoadingOverlay } from '@/components/generator/LoadingOverlay';
 import { AdPlacementPreviewer } from '@/components/generator/AdPlacementPreviewer';
 import { useGeneration } from '@/hooks/useGeneration';
-import { Customer, Project, GeneratedImage, GenerationSettings, StyleCategory, PredefinedJsonPrompt, ScrapedProduct, AdCopy } from '@/types';
+import { Client, Project, GeneratedImage, GenerationSettings, StyleCategory, PredefinedJsonPrompt, ScrapedProduct, AdCopy } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Index() {
@@ -16,17 +16,14 @@ export default function Index() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Customer & Project state
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // Scraping & Ad Copy
   const [scrapedProduct, setScrapedProduct] = useState<ScrapedProduct | null>(null);
   const [adCopy, setAdCopy] = useState<AdCopy | null>(null);
 
-  // Generation inputs
   const [influencePrompt, setInfluencePrompt] = useState('');
   const [productImages, setProductImages] = useState<string[]>([]);
   const [modelImages, setModelImages] = useState<string[]>([]);
@@ -45,7 +42,6 @@ export default function Index() {
   const { task, allResults, generate, setAllResults } = useGeneration();
   const isGenerating = task?.status === 'running';
 
-  // Auth check
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -60,39 +56,52 @@ export default function Index() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Load customers
-  useEffect(() => { if (user) loadCustomers(); }, [user]);
+  useEffect(() => { if (user) loadClients(); }, [user]);
 
-  // Load projects when customer changes
   useEffect(() => {
-    if (selectedCustomer) loadProjects(selectedCustomer.id);
+    if (selectedClient) loadProjects(selectedClient.id);
     else setProjects([]);
-  }, [selectedCustomer?.id]);
+  }, [selectedClient?.id]);
 
-  const loadCustomers = async () => {
+  const loadClients = async () => {
     const { data } = await supabase.from('customers').select('*').order('name');
-    if (data) setCustomers(data as Customer[]);
+    if (data) setClients(data as Client[]);
   };
 
-  const loadProjects = async (customerId: string) => {
-    const { data } = await supabase.from('projects').select('*').eq('customer_id', customerId).order('name');
+  const loadProjects = async (clientId: string) => {
+    const { data } = await supabase.from('projects').select('*').eq('customer_id', clientId).order('name');
     if (data) setProjects(data as Project[]);
   };
 
-  const addCustomer = async (name: string) => {
+  const addClient = async (name: string) => {
     if (!user) return;
     const { data, error } = await supabase.from('customers').insert({ name, user_id: user.id }).select().single();
     if (data) {
-      const customer = data as Customer;
-      setCustomers((prev) => [...prev, customer].sort((a, b) => a.name.localeCompare(b.name)));
-      setSelectedCustomer(customer);
+      const client = data as Client;
+      setClients((prev) => [...prev, client].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedClient(client);
     }
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
   };
 
+  const deleteClient = async (id: string) => {
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setClients((prev) => prev.filter((c) => c.id !== id));
+    if (selectedClient?.id === id) {
+      setSelectedClient(null);
+      setSelectedProject(null);
+      setProjects([]);
+    }
+    toast({ title: 'Client deleted' });
+  };
+
   const addProject = async (name: string) => {
-    if (!selectedCustomer) return;
-    const { data, error } = await supabase.from('projects').insert({ name, customer_id: selectedCustomer.id }).select().single();
+    if (!selectedClient) return;
+    const { data, error } = await supabase.from('projects').insert({ name, customer_id: selectedClient.id }).select().single();
     if (data) {
       const project = data as Project;
       setProjects((prev) => [...prev, project].sort((a, b) => a.name.localeCompare(b.name)));
@@ -117,7 +126,6 @@ export default function Index() {
   };
 
   const handleGenerate = useCallback(() => {
-    // With unified prompting, we always have enough context — at minimum a scene template, style, or influence prompt
     const hasContext = !!selectedJsonPrompt || !!selectedStyle || !!influencePrompt.trim() || productImages.length > 0;
     if (!hasContext) {
       toast({ title: 'Missing input', description: 'Select a scene template, style, or type an influence prompt.', variant: 'destructive' });
@@ -125,10 +133,10 @@ export default function Index() {
     }
     setShowLoadingOverlay(true);
     generate({
-      prompt: '', // No separate "manual prompt" — influence prompt handles it
+      prompt: '',
       settings, style: selectedStyle, styleSubOptions,
       productImages, modelImages,
-      clientId: selectedCustomer?.id,
+      clientId: selectedClient?.id,
       jsonPrompt: selectedJsonPrompt,
       influencePrompt,
       scrapedProduct,
@@ -139,7 +147,7 @@ export default function Index() {
         saveGeneration(results);
       },
     });
-  }, [settings, selectedStyle, styleSubOptions, productImages, modelImages, selectedCustomer, generate, selectedJsonPrompt, influencePrompt, scrapedProduct, selectedProject, isGrid]);
+  }, [settings, selectedStyle, styleSubOptions, productImages, modelImages, selectedClient, generate, selectedJsonPrompt, influencePrompt, scrapedProduct, selectedProject, isGrid]);
 
   const handleRefinedImage = useCallback((newImage: GeneratedImage) => {
     setAllResults((prev) => [...prev, newImage]);
@@ -148,7 +156,7 @@ export default function Index() {
   const handleDownload = async (image: GeneratedImage) => {
     const link = document.createElement('a');
     link.href = image.url;
-    const name = selectedCustomer?.name?.replace(/\s+/g, '-') || 'creative';
+    const name = selectedClient?.name?.replace(/\s+/g, '-') || 'creative';
     link.download = `${name}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.${settings.format}`;
     document.body.appendChild(link);
     link.click();
@@ -159,7 +167,7 @@ export default function Index() {
     const JSZip = (await import('jszip')).default;
     const { saveAs } = await import('file-saver');
     const zip = new JSZip();
-    const name = selectedCustomer?.name?.replace(/\s+/g, '-') || 'creatives';
+    const name = selectedClient?.name?.replace(/\s+/g, '-') || 'creatives';
     await Promise.all(images.map(async (img, i) => {
       try {
         const response = await fetch(img.url);
@@ -182,10 +190,11 @@ export default function Index() {
   return (
     <>
       <DashboardLayout
-        customers={customers}
-        selectedCustomer={selectedCustomer}
-        onSelectCustomer={setSelectedCustomer}
-        onAddCustomer={addCustomer}
+        clients={clients}
+        selectedClient={selectedClient}
+        onSelectClient={setSelectedClient}
+        onAddClient={addClient}
+        onDeleteClient={deleteClient}
         projects={projects}
         selectedProject={selectedProject}
         onSelectProject={setSelectedProject}
