@@ -1,15 +1,15 @@
-import { Image, Lock } from 'lucide-react';
-import { Customer, Project, ScrapedProduct } from '@/types';
-import { CustomerProjectSelector } from './CustomerProjectSelector';
+import { Image } from 'lucide-react';
+import { Client, Project, ScrapedProduct } from '@/types';
+import { ClientProjectSelector } from './ClientProjectSelector';
 import { UrlScraper } from './UrlScraper';
 import { MultiImageUpload } from '@/components/generator/MultiImageUpload';
-import { Badge } from '@/components/ui/badge';
 
 interface InputColumnProps {
-  customers: Customer[];
-  selectedCustomer: Customer | null;
-  onSelectCustomer: (c: Customer | null) => void;
-  onAddCustomer: (name: string) => void;
+  clients: Client[];
+  selectedClient: Client | null;
+  onSelectClient: (c: Client | null) => void;
+  onAddClient: (name: string) => void;
+  onDeleteClient: (id: string) => void;
   projects: Project[];
   selectedProject: Project | null;
   onSelectProject: (p: Project | null) => void;
@@ -23,7 +23,7 @@ interface InputColumnProps {
 }
 
 export function InputColumn({
-  customers, selectedCustomer, onSelectCustomer, onAddCustomer,
+  clients, selectedClient, onSelectClient, onAddClient, onDeleteClient,
   projects, selectedProject, onSelectProject, onAddProject,
   scrapedProduct, onScraped,
   productImages, onProductImagesChange,
@@ -38,10 +38,10 @@ export function InputColumn({
           <p className="text-xs text-muted-foreground mt-0.5">Creative Dashboard</p>
         </div>
 
-        {/* Customer & Project */}
-        <CustomerProjectSelector
-          customers={customers} selectedCustomer={selectedCustomer}
-          onSelectCustomer={onSelectCustomer} onAddCustomer={onAddCustomer}
+        {/* Client & Project */}
+        <ClientProjectSelector
+          clients={clients} selectedClient={selectedClient}
+          onSelectClient={onSelectClient} onAddClient={onAddClient} onDeleteClient={onDeleteClient}
           projects={projects} selectedProject={selectedProject}
           onSelectProject={onSelectProject} onAddProject={onAddProject}
         />
@@ -49,28 +49,22 @@ export function InputColumn({
         {/* URL Scraper */}
         <UrlScraper scrapedProduct={scrapedProduct} onScraped={onScraped} />
 
-        {/* Product Hub */}
+        {/* Product Images */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Image className="w-3.5 h-3.5" />
-            Product Hub
+            Product Images
           </div>
           <MultiImageUpload label="Product Images" images={productImages} onChange={onProductImagesChange} max={5} />
-          <p className="text-[10px] text-muted-foreground/60 italic">AI uses all images as structural reference for 3D understanding</p>
         </div>
 
-        {/* Model Hub */}
+        {/* Model Images */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Image className="w-3.5 h-3.5" />
-            Model Hub
+            Model Images
           </div>
           <MultiImageUpload label="Model Images" images={modelImages} onChange={onModelImagesChange} max={5} />
-          <div className="flex items-center gap-1.5">
-            <Badge variant="outline" className="text-[9px] gap-1 px-1.5 py-0 h-5 border-dashed">
-              <Lock className="w-2.5 h-2.5" /> Save Model to Library — Coming Soon
-            </Badge>
-          </div>
         </div>
       </div>
     </div>

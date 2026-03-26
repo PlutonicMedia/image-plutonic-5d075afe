@@ -1,14 +1,14 @@
-import { Customer, Project, GeneratedImage, GenerationSettings, StyleCategory, PredefinedJsonPrompt, ScrapedProduct, AdCopy } from '@/types';
+import { Client, Project, GeneratedImage, GenerationSettings, StyleCategory, PredefinedJsonPrompt, ScrapedProduct, AdCopy } from '@/types';
 import { InputColumn } from './InputColumn';
 import { CanvasColumn } from './CanvasColumn';
 import { ControlColumn } from './ControlColumn';
 
 interface DashboardLayoutProps {
-  // Input Column
-  customers: Customer[];
-  selectedCustomer: Customer | null;
-  onSelectCustomer: (c: Customer | null) => void;
-  onAddCustomer: (name: string) => void;
+  clients: Client[];
+  selectedClient: Client | null;
+  onSelectClient: (c: Client | null) => void;
+  onAddClient: (name: string) => void;
+  onDeleteClient: (id: string) => void;
   projects: Project[];
   selectedProject: Project | null;
   onSelectProject: (p: Project | null) => void;
@@ -19,15 +19,11 @@ interface DashboardLayoutProps {
   onProductImagesChange: (imgs: string[]) => void;
   modelImages: string[];
   onModelImagesChange: (imgs: string[]) => void;
-
-  // Canvas Column
   images: GeneratedImage[];
   onImageClick: (image: GeneratedImage) => void;
   onDownloadSelected: (images: GeneratedImage[]) => void;
   onRefinedImage: (newImage: GeneratedImage) => void;
   isGrid: boolean;
-
-  // Control Column
   settings: GenerationSettings;
   onSettingsChange: (s: GenerationSettings) => void;
   selectedStyle: StyleCategory | null;
@@ -48,10 +44,11 @@ export function DashboardLayout(props: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <InputColumn
-        customers={props.customers}
-        selectedCustomer={props.selectedCustomer}
-        onSelectCustomer={props.onSelectCustomer}
-        onAddCustomer={props.onAddCustomer}
+        clients={props.clients}
+        selectedClient={props.selectedClient}
+        onSelectClient={props.onSelectClient}
+        onAddClient={props.onAddClient}
+        onDeleteClient={props.onDeleteClient}
         projects={props.projects}
         selectedProject={props.selectedProject}
         onSelectProject={props.onSelectProject}

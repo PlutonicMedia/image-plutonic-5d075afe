@@ -1,6 +1,6 @@
 // ── Agency Hierarchy ─────────────────────────────────────────────────────
 
-export interface Customer {
+export interface Client {
   id: string;
   user_id: string;
   name: string;
@@ -49,14 +49,6 @@ export interface ClientLastSettings {
   cameraLens?: string;
   selectedStyle?: StyleCategory | null;
   styleSubOptions?: Record<string, string>;
-}
-
-export interface Client {
-  id: string;
-  name: string;
-  created_at: string;
-  user_id: string;
-  last_settings?: ClientLastSettings | null;
 }
 
 export interface BrandAsset {
