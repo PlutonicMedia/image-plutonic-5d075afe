@@ -24,12 +24,13 @@ interface ClientProjectSelectorProps {
 
 export function ClientProjectSelector({
   clients, selectedClient, onSelectClient, onAddClient, onDeleteClient,
-  projects, selectedProject, onSelectProject, onAddProject,
+  projects, selectedProject, onSelectProject, onAddProject, onDeleteProject,
 }: ClientProjectSelectorProps) {
   const [addingClient, setAddingClient] = useState(false);
   const [addingProject, setAddingProject] = useState(false);
   const [newName, setNewName] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState<Project | null>(null);
 
   const handleAddClient = () => {
     if (newName.trim()) {
