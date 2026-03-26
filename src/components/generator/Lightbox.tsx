@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { X, Download, Monitor, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GeneratedImage } from '@/types';
@@ -13,18 +14,23 @@ interface LightboxProps {
 }
 
 export function Lightbox({ image, allImages, onClose, onNavigate, onDownload, onPreviewAd }: LightboxProps) {
+  const [zoomed, setZoomed] = useState(false);
   const currentIndex = allImages.findIndex((i) => i.id === image.id);
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < allImages.length - 1;
 
-  const goPrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (hasPrev) onNavigate(allImages[currentIndex - 1]);
-  };
-  const goNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (hasNext) onNavigate(allImages[currentIndex + 1]);
-  };
+  const goPrev = () => { if (hasPrev) onNavigate(allImages[currentIndex - 1]); };
+  const goNext = () => { if (hasNext) onNavigate(allImages[currentIndex + 1]); };
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') goPrev();
+      if (e.key === 'ArrowRight') goNext();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [currentIndex, allImages]);
 
   return (
     <AnimatePresence>
@@ -35,20 +41,18 @@ export function Lightbox({ image, allImages, onClose, onNavigate, onDownload, on
         className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 backdrop-blur-sm"
         onClick={onClose}
       >
-        {/* Left arrow */}
         {hasPrev && (
           <button
-            onClick={goPrev}
+            onClick={(e) => { e.stopPropagation(); goPrev(); }}
             className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-card/80 backdrop-blur-sm hover:bg-card transition-colors shadow-lg"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
         )}
 
-        {/* Right arrow */}
         {hasNext && (
           <button
-            onClick={goNext}
+            onClick={(e) => { e.stopPropagation(); goNext(); }}
             className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-card/80 backdrop-blur-sm hover:bg-card transition-colors shadow-lg"
           >
             <ChevronRight className="w-6 h-6" />
@@ -75,8 +79,15 @@ export function Lightbox({ image, allImages, onClose, onNavigate, onDownload, on
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-surface-sunken">
-            <img src={image.url} alt={image.prompt} className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-card" />
+          <div
+            className={`flex-1 overflow-auto p-6 flex items-center justify-center bg-surface-sunken ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+            onClick={() => setZoomed(!zoomed)}
+          >
+            <img
+              src={image.url}
+              alt={image.prompt}
+              className={`${zoomed ? 'max-w-none w-auto' : 'max-w-full max-h-[80vh] object-contain'} rounded-lg shadow-card transition-all duration-200`}
+            />
           </div>
 
           <div className="flex items-center gap-2 p-4 border-t border-border">

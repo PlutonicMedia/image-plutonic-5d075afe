@@ -58,9 +58,9 @@ serve(async (req) => {
       console.error("Scrape step failed:", scrapeErr);
       // Return fallback neutral context instead of crashing
       return new Response(JSON.stringify({
-        product_name: "Unknown Product",
-        description: "Could not extract product details from URL.",
-        usps: ["Quality craftsmanship", "Premium materials", "Modern design"],
+        product_name: "",
+        description: "",
+        usps: [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -69,9 +69,9 @@ serve(async (req) => {
     if (!markdown) {
       // Return fallback if no content
       return new Response(JSON.stringify({
-        product_name: "Unknown Product",
-        description: "No content found at the provided URL.",
-        usps: ["Quality craftsmanship", "Premium materials", "Modern design"],
+        product_name: "",
+        description: "",
+        usps: [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -140,9 +140,9 @@ serve(async (req) => {
       console.error("AI gateway error:", aiResponse.status, text);
       // Fallback on AI failure
       return new Response(JSON.stringify({
-        product_name: "Unknown Product",
-        description: "AI extraction failed. Edit the details manually.",
-        usps: ["Quality craftsmanship", "Premium materials", "Modern design"],
+        product_name: "",
+        description: "",
+        usps: [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -152,9 +152,9 @@ serve(async (req) => {
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
       return new Response(JSON.stringify({
-        product_name: "Unknown Product",
-        description: "AI could not parse product data. Edit manually.",
-        usps: ["Quality craftsmanship", "Premium materials", "Modern design"],
+        product_name: "",
+        description: "",
+        usps: [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

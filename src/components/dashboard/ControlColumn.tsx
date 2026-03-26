@@ -1,175 +1,175 @@
-import { Sparkles, Camera, Settings2, Lock, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { Sparkles, Wand2, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdCopyDisplay } from './AdCopyDisplay';
-import {
-  GenerationSettings, ASPECT_RATIOS,
-  StyleCategory, STYLE_CATEGORIES, STYLE_SUB_OPTIONS,
-  CAMERA_LENSES, CameraLens, CAMERA_ANGLES, CameraAngle,
-  PredefinedJsonPrompt, PREDEFINED_JSON_PROMPTS, AdCopy,
-} from '@/types';
+import { GenerationSettings, ASPECT_RATIOS, AdCopy } from '@/types';
+import { useScopedData } from '@/hooks/useScopedData';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ControlColumnProps {
+  prompt: string;
+  onPromptChange: (p: string) => void;
   settings: GenerationSettings;
   onSettingsChange: (s: GenerationSettings) => void;
-  selectedStyle: StyleCategory | null;
-  onStyleChange: (s: StyleCategory | null) => void;
-  styleSubOptions: Record<string, string>;
-  onStyleSubOptionsChange: (o: Record<string, string>) => void;
-  selectedJsonPrompt: PredefinedJsonPrompt | null;
-  onJsonPromptChange: (jp: PredefinedJsonPrompt | null) => void;
-  influencePrompt: string;
-  onInfluencePromptChange: (p: string) => void;
   isGrid: boolean;
   onGridChange: (g: boolean) => void;
   adCopy: AdCopy | null;
   onGenerate: () => void;
   isGenerating: boolean;
+  userId: string | null;
+  clientId: string | null;
+  projectId: string | null;
 }
 
 export function ControlColumn({
+  prompt, onPromptChange,
   settings, onSettingsChange,
-  selectedStyle, onStyleChange, styleSubOptions, onStyleSubOptionsChange,
-  selectedJsonPrompt, onJsonPromptChange,
-  influencePrompt, onInfluencePromptChange,
   isGrid, onGridChange,
   adCopy, onGenerate, isGenerating,
+  userId, clientId, projectId,
 }: ControlColumnProps) {
-  const currentSubs = selectedStyle ? STYLE_SUB_OPTIONS[selectedStyle] : null;
+  const { toast } = useToast();
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [showModels, setShowModels] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(false);
+  const { models, prompts } = useScopedData(userId, clientId, projectId);
+
+  const handleOptimize = async () => {
+    if (!prompt.trim()) {
+      toast({ title: 'Enter a prompt first', variant: 'destructive' });
+      return;
+    }
+    setIsOptimizing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('optimize-prompt', {
+        body: { prompt },
+      });
+      if (error) throw error;
+      if (data?.optimizedPrompt) {
+        onPromptChange(data.optimizedPrompt);
+        toast({ title: '✨ Prompt optimized' });
+      }
+    } catch (e: any) {
+      console.error('Optimize error:', e);
+      toast({ title: 'Optimization failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  const filterByScope = <T extends { scope: string; client_id: string | null; project_id: string | null }>(
+    items: T[], scope: string
+  ): T[] => {
+    if (scope === 'global') return items.filter(i => i.scope === 'global');
+    if (scope === 'client') return items.filter(i => i.scope === 'client' && i.client_id === clientId);
+    if (scope === 'project') return items.filter(i => i.scope === 'project' && i.project_id === projectId);
+    return [];
+  };
 
   return (
     <div className="w-[340px] shrink-0 border-l border-border bg-card overflow-y-auto scrollbar-thin">
       <div className="p-5 space-y-5">
-        <h2 className="text-base font-display font-semibold flex items-center gap-2">
-          <Settings2 className="w-4 h-4" />
-          Control Panel
-        </h2>
+        <h2 className="text-base font-display font-semibold">Control Panel</h2>
 
-        {/* Scene Template */}
+        {/* Prompt */}
         <div className="space-y-2">
-          <Label className="text-xs font-medium text-muted-foreground">Scene Template</Label>
-          <Select value={selectedJsonPrompt?.id || ''} onValueChange={(v) => onJsonPromptChange(PREDEFINED_JSON_PROMPTS.find((p) => p.id === v) || null)}>
-            <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Choose a scene template..." /></SelectTrigger>
-            <SelectContent>
-              {PREDEFINED_JSON_PROMPTS.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="text-sm">{p.name}</SelectItem>
+          <Label className="text-xs font-medium text-muted-foreground">Prompt</Label>
+          <Textarea
+            value={prompt}
+            onChange={(e) => onPromptChange(e.target.value)}
+            placeholder="Describe your creative vision in any language..."
+            className="min-h-[120px] text-sm resize-none"
+          />
+          <Button
+            onClick={handleOptimize}
+            disabled={isOptimizing || !prompt.trim()}
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+          >
+            <Wand2 className="w-3.5 h-3.5 mr-1.5" />
+            {isOptimizing ? 'Optimizing…' : 'AI Optimize Prompt'}
+          </Button>
+        </div>
+
+        {/* Saved Prompts */}
+        <div>
+          <button
+            onClick={() => setShowPrompts(!showPrompts)}
+            className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Saved Prompts
+            {showPrompts ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          {showPrompts && (
+            <Tabs defaultValue="global" className="mt-2">
+              <TabsList className="h-7 w-full">
+                <TabsTrigger value="global" className="text-[10px] flex-1">Global</TabsTrigger>
+                <TabsTrigger value="client" className="text-[10px] flex-1" disabled={!clientId}>Client</TabsTrigger>
+                <TabsTrigger value="project" className="text-[10px] flex-1" disabled={!projectId}>Project</TabsTrigger>
+              </TabsList>
+              {['global', 'client', 'project'].map(scope => (
+                <TabsContent key={scope} value={scope} className="mt-2 space-y-1">
+                  {filterByScope(prompts, scope).length === 0 ? (
+                    <p className="text-[10px] text-muted-foreground/60 text-center py-2">No saved prompts</p>
+                  ) : (
+                    filterByScope(prompts, scope).map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => onPromptChange(prompt ? `${prompt}\n${p.content}` : p.content)}
+                        className="w-full text-left p-2 rounded-md text-xs hover:bg-muted transition-colors truncate"
+                      >
+                        {p.name}
+                      </button>
+                    ))
+                  )}
+                </TabsContent>
               ))}
-            </SelectContent>
-          </Select>
-          {selectedJsonPrompt && (
-            <div className="p-3 rounded-lg bg-muted/50 border border-border text-xs text-muted-foreground space-y-1.5">
-              <p className="font-medium text-foreground text-[11px]">{selectedJsonPrompt.name}</p>
-              <p className="leading-relaxed line-clamp-3">{selectedJsonPrompt.scene.environment}</p>
-              <p className="text-[10px] text-muted-foreground/60 italic">Auto-adapts based on uploaded images</p>
-            </div>
+            </Tabs>
           )}
         </div>
 
-        {/* Style Preset */}
-        <TooltipProvider delayDuration={200}>
-          <div className="space-y-2">
-            <Label className="text-xs font-medium text-muted-foreground">Style Preset</Label>
-            <Select value={selectedStyle || ''} onValueChange={(v) => { onStyleChange(v as StyleCategory); onStyleSubOptionsChange({}); }}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Choose a style..." /></SelectTrigger>
-              <SelectContent>
-                {STYLE_CATEGORIES.map((s) => (
-                  <SelectItem key={s.value} value={s.value} className="text-sm">
-                    <div className="flex flex-col">
-                      <span>{s.label}</span>
+        {/* Saved Models */}
+        <div>
+          <button
+            onClick={() => setShowModels(!showModels)}
+            className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Saved Models
+            {showModels ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          {showModels && (
+            <Tabs defaultValue="global" className="mt-2">
+              <TabsList className="h-7 w-full">
+                <TabsTrigger value="global" className="text-[10px] flex-1">Global</TabsTrigger>
+                <TabsTrigger value="client" className="text-[10px] flex-1" disabled={!clientId}>Client</TabsTrigger>
+                <TabsTrigger value="project" className="text-[10px] flex-1" disabled={!projectId}>Project</TabsTrigger>
+              </TabsList>
+              {['global', 'client', 'project'].map(scope => (
+                <TabsContent key={scope} value={scope} className="mt-2">
+                  {filterByScope(models, scope).length === 0 ? (
+                    <p className="text-[10px] text-muted-foreground/60 text-center py-2">No saved models</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {filterByScope(models, scope).map(m => (
+                        <div key={m.id} className="relative group">
+                          <img src={m.image_url} alt={m.name} className="w-full aspect-square object-cover rounded-md" />
+                          <p className="text-[9px] text-muted-foreground truncate mt-0.5">{m.name}</p>
+                        </div>
+                      ))}
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedStyle && (
-              <p className="text-[10px] text-muted-foreground/70 italic">
-                {STYLE_CATEGORIES.find((s) => s.value === selectedStyle)?.description}
-              </p>
-            )}
-            {currentSubs && (
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                {currentSubs.dropdowns.map((dd) => (
-                  <div key={dd.key}>
-                    <Label className="text-[10px] text-muted-foreground mb-1 block">{dd.label}</Label>
-                    <Select value={styleSubOptions[dd.key] || ''} onValueChange={(v) => onStyleSubOptionsChange({ ...styleSubOptions, [dd.key]: v })}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
-                      <SelectContent>
-                        {dd.options.map((o) => (
-                          <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 pt-1">
-              <Badge variant="outline" className="text-[9px] gap-1 px-1.5 py-0 h-5 border-dashed">
-                <Lock className="w-2.5 h-2.5" /> Save as Brand Preset — Coming Soon
-              </Badge>
-            </div>
-          </div>
-        </TooltipProvider>
-
-        {/* Camera */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Camera className="w-3.5 h-3.5" /> Camera
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-[10px] text-muted-foreground mb-1 block">Lens</Label>
-              <Select value={settings.cameraLens || 'none'} onValueChange={(v) => onSettingsChange({ ...settings, cameraLens: v === 'none' ? '' : v as CameraLens })}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" className="text-xs">Auto</SelectItem>
-                  {CAMERA_LENSES.map((l) => (
-                    <SelectItem key={l.value} value={l.value} className="text-xs">{l.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {settings.cameraLens && (
-                <p className="text-[9px] text-muted-foreground/60 mt-0.5">
-                  {CAMERA_LENSES.find((l) => l.value === settings.cameraLens)?.description}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label className="text-[10px] text-muted-foreground mb-1 block">Angle</Label>
-              <Select value={settings.cameraAngle || 'none'} onValueChange={(v) => onSettingsChange({ ...settings, cameraAngle: v === 'none' ? '' : v as CameraAngle })}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" className="text-xs">Auto</SelectItem>
-                  {CAMERA_ANGLES.map((a) => (
-                    <SelectItem key={a.value} value={a.value} className="text-xs">{a.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {settings.cameraAngle && (
-                <p className="text-[9px] text-muted-foreground/60 mt-0.5">
-                  {CAMERA_ANGLES.find((a) => a.value === settings.cameraAngle)?.description}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Influence Prompt (the only prompt input) */}
-        <div className="space-y-2">
-          <Label className="text-xs font-medium text-muted-foreground">Influence Prompt</Label>
-          <Textarea
-            value={influencePrompt}
-            onChange={(e) => onInfluencePromptChange(e.target.value)}
-            placeholder="Describe your creative vision or add specific instructions... e.g. 'Make the background more blue, add warm lighting'"
-            className="min-h-[80px] text-sm resize-none"
-          />
-          <p className="text-[10px] text-muted-foreground/60 italic">Merged with presets, camera settings, and scraped USPs</p>
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
         </div>
 
         {/* Output Settings */}
@@ -221,7 +221,7 @@ export function ControlColumn({
             <Switch checked={settings.draftMode} onCheckedChange={(v) => onSettingsChange({ ...settings, draftMode: v })} />
           </div>
           {settings.draftMode && (
-            <p className="text-[9px] text-muted-foreground/60 italic">Lower resolution for quick testing iterations</p>
+            <p className="text-[9px] text-muted-foreground/60 italic">512×512 for quick testing</p>
           )}
         </div>
 
