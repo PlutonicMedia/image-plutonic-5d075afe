@@ -30,7 +30,7 @@ export function AdCopyDisplay({ adCopy }: AdCopyDisplayProps) {
         Generated Ad Copy
       </Label>
       {[
-        { label: 'Hook', value: adCopy.hook, color: 'bg-primary/10 text-primary' },
+        { label: 'Headline', value: adCopy.headline, color: 'bg-primary/10 text-primary' },
         { label: 'Body', value: adCopy.body, color: 'bg-accent text-accent-foreground' },
         { label: 'CTA', value: adCopy.cta, color: 'bg-secondary text-secondary-foreground' },
       ].map(({ label, value, color }) => (

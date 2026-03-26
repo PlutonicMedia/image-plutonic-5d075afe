@@ -15,11 +15,21 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { messages, aspectRatio, adCopyContext, draftMode } = await req.json();
+    const { messages, aspectRatio, adCopyContext, draftMode, isGrid } = await req.json();
 
-    const systemPrompt = `Generate a photorealistic ad asset. 1:1 product shape is mandatory. No conversational filler. No text or watermarks. Aspect ratio: ${aspectRatio || "1:1"}.${draftMode ? " Output at lower resolution for quick draft preview." : ""}`;
+    // Prepend grid instruction if needed
+    if (isGrid && messages?.[0]?.content) {
+      const content = messages[0].content;
+      if (Array.isArray(content)) {
+        const textPart = content.find((p: any) => p.type === 'text');
+        if (textPart) {
+          textPart.text = `MANDATORY: Output a single image divided into a perfect 2x2 grid containing 4 different variations of the subject. ${textPart.text}`;
+        }
+      }
+    }
 
-    // Step 1: Generate image
+    const systemPrompt = `Generate a photorealistic ad asset. 1:1 product shape is mandatory. No conversational filler. No text or watermarks. Aspect ratio: ${aspectRatio || "1:1"}.${draftMode ? " Output at 512x512 resolution for quick draft preview." : ""}`;
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -58,7 +68,7 @@ serve(async (req) => {
       throw new Error("No image was generated. Try a different prompt.");
     }
 
-    // Step 2: Generate ad copy concurrently if context provided
+    // Generate ad copy if context provided
     let adCopy = null;
     if (adCopyContext) {
       try {
@@ -85,15 +95,15 @@ serve(async (req) => {
                 type: "function",
                 function: {
                   name: "generate_ad_copy",
-                  description: "Generate hook, body, and CTA for an ad",
+                  description: "Generate headline, body, and CTA for an ad",
                   parameters: {
                     type: "object",
                     properties: {
-                      hook: { type: "string", description: "Attention-grabbing headline (max 10 words)" },
+                      headline: { type: "string", description: "Attention-grabbing headline (max 10 words)" },
                       body: { type: "string", description: "Persuasive body text (1-2 sentences)" },
                       cta: { type: "string", description: "Call-to-action text (2-5 words)" },
                     },
-                    required: ["hook", "body", "cta"],
+                    required: ["headline", "body", "cta"],
                     additionalProperties: false,
                   },
                 },

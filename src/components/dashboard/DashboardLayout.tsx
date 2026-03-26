@@ -1,4 +1,4 @@
-import { Client, Project, GeneratedImage, GenerationSettings, StyleCategory, PredefinedJsonPrompt, ScrapedProduct, AdCopy } from '@/types';
+import { Client, Project, GeneratedImage, GenerationSettings, ScrapedProduct, AdCopy } from '@/types';
 import { InputColumn } from './InputColumn';
 import { CanvasColumn } from './CanvasColumn';
 import { ControlColumn } from './ControlColumn';
@@ -26,20 +26,15 @@ interface DashboardLayoutProps {
   onDownloadSelected: (images: GeneratedImage[]) => void;
   onRefinedImage: (newImage: GeneratedImage) => void;
   isGrid: boolean;
+  prompt: string;
+  onPromptChange: (p: string) => void;
   settings: GenerationSettings;
   onSettingsChange: (s: GenerationSettings) => void;
-  selectedStyle: StyleCategory | null;
-  onStyleChange: (s: StyleCategory | null) => void;
-  styleSubOptions: Record<string, string>;
-  onStyleSubOptionsChange: (o: Record<string, string>) => void;
-  selectedJsonPrompt: PredefinedJsonPrompt | null;
-  onJsonPromptChange: (jp: PredefinedJsonPrompt | null) => void;
-  influencePrompt: string;
-  onInfluencePromptChange: (p: string) => void;
   onGridChange: (g: boolean) => void;
   adCopy: AdCopy | null;
   onGenerate: () => void;
   isGenerating: boolean;
+  userId: string | null;
 }
 
 export function DashboardLayout(props: DashboardLayoutProps) {
@@ -72,21 +67,18 @@ export function DashboardLayout(props: DashboardLayoutProps) {
         isGrid={props.isGrid}
       />
       <ControlColumn
+        prompt={props.prompt}
+        onPromptChange={props.onPromptChange}
         settings={props.settings}
         onSettingsChange={props.onSettingsChange}
-        selectedStyle={props.selectedStyle}
-        onStyleChange={props.onStyleChange}
-        styleSubOptions={props.styleSubOptions}
-        onStyleSubOptionsChange={props.onStyleSubOptionsChange}
-        selectedJsonPrompt={props.selectedJsonPrompt}
-        onJsonPromptChange={props.onJsonPromptChange}
-        influencePrompt={props.influencePrompt}
-        onInfluencePromptChange={props.onInfluencePromptChange}
         isGrid={props.isGrid}
         onGridChange={props.onGridChange}
         adCopy={props.adCopy}
         onGenerate={props.onGenerate}
         isGenerating={props.isGenerating}
+        userId={props.userId}
+        clientId={props.selectedClient?.id || null}
+        projectId={props.selectedProject?.id || null}
       />
     </div>
   );

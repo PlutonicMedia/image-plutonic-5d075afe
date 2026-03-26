@@ -6,7 +6,7 @@ import { Lightbox } from '@/components/generator/Lightbox';
 import { LoadingOverlay } from '@/components/generator/LoadingOverlay';
 import { AdPlacementPreviewer } from '@/components/generator/AdPlacementPreviewer';
 import { useGeneration } from '@/hooks/useGeneration';
-import { Client, Project, GeneratedImage, GenerationSettings, StyleCategory, PredefinedJsonPrompt, ScrapedProduct, AdCopy } from '@/types';
+import { Client, Project, GeneratedImage, GenerationSettings, ScrapedProduct, AdCopy } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Index() {
@@ -24,17 +24,13 @@ export default function Index() {
   const [scrapedProduct, setScrapedProduct] = useState<ScrapedProduct | null>(null);
   const [adCopy, setAdCopy] = useState<AdCopy | null>(null);
 
-  const [influencePrompt, setInfluencePrompt] = useState('');
+  const [prompt, setPrompt] = useState('');
   const [productImages, setProductImages] = useState<string[]>([]);
   const [modelImages, setModelImages] = useState<string[]>([]);
   const [settings, setSettings] = useState<GenerationSettings>({
-    aspectRatio: '1:1', quality: '2k', numOutputs: 4, format: 'png', cameraLens: '', cameraAngle: '', draftMode: false,
+    aspectRatio: '1:1', quality: '2k', numOutputs: 4, format: 'png', draftMode: false,
   });
   const [isGrid, setIsGrid] = useState(false);
-
-  const [selectedStyle, setSelectedStyle] = useState<StyleCategory | null>(null);
-  const [styleSubOptions, setStyleSubOptions] = useState<Record<string, string>>({});
-  const [selectedJsonPrompt, setSelectedJsonPrompt] = useState<PredefinedJsonPrompt | null>(null);
 
   const [lightboxImage, setLightboxImage] = useState<GeneratedImage | null>(null);
   const [adPreviewImage, setAdPreviewImage] = useState<GeneratedImage | null>(null);
@@ -85,7 +81,6 @@ export default function Index() {
   };
 
   const deleteClient = async (id: string) => {
-    // Cascading delete: generations → projects → client
     const { data: clientProjects } = await supabase.from('projects').select('id').eq('customer_id', id);
     if (clientProjects?.length) {
       const projectIds = clientProjects.map(p => p.id);
@@ -141,7 +136,7 @@ export default function Index() {
         user_id: user.id,
         project_id: selectedProject?.id || null,
         status: 'completed',
-        params: { prompt: img.prompt, aspect_ratio: img.aspect_ratio, style_tag: img.style_tag },
+        params: { prompt: img.prompt, aspect_ratio: img.aspect_ratio },
         output_url: img.url,
         ad_copy: img.ad_copy as any || null,
         is_grid: isGrid,
@@ -150,19 +145,17 @@ export default function Index() {
   };
 
   const handleGenerate = useCallback(() => {
-    const hasContext = !!selectedJsonPrompt || !!selectedStyle || !!influencePrompt.trim() || productImages.length > 0;
-    if (!hasContext) {
-      toast({ title: 'Missing input', description: 'Select a scene template, style, or type an influence prompt.', variant: 'destructive' });
+    if (!prompt.trim() && productImages.length === 0) {
+      toast({ title: 'Missing input', description: 'Enter a prompt or upload product images.', variant: 'destructive' });
       return;
     }
     setShowLoadingOverlay(true);
     generate({
-      prompt: '',
-      settings, style: selectedStyle, styleSubOptions,
-      productImages, modelImages,
+      prompt,
+      settings,
+      productImages,
+      modelImages,
       clientId: selectedClient?.id,
-      jsonPrompt: selectedJsonPrompt,
-      influencePrompt,
       scrapedProduct,
       isGrid,
       onComplete: async (results: GeneratedImage[]) => {
@@ -171,7 +164,7 @@ export default function Index() {
         saveGeneration(results);
       },
     });
-  }, [settings, selectedStyle, styleSubOptions, productImages, modelImages, selectedClient, generate, selectedJsonPrompt, influencePrompt, scrapedProduct, selectedProject, isGrid]);
+  }, [prompt, settings, productImages, modelImages, selectedClient, generate, scrapedProduct, selectedProject, isGrid]);
 
   const handleRefinedImage = useCallback((newImage: GeneratedImage) => {
     setAllResults((prev) => [...prev, newImage]);
@@ -236,20 +229,15 @@ export default function Index() {
         onDownloadSelected={handleDownloadSelected}
         onRefinedImage={handleRefinedImage}
         isGrid={isGrid}
+        prompt={prompt}
+        onPromptChange={setPrompt}
         settings={settings}
         onSettingsChange={setSettings}
-        selectedStyle={selectedStyle}
-        onStyleChange={setSelectedStyle}
-        styleSubOptions={styleSubOptions}
-        onStyleSubOptionsChange={setStyleSubOptions}
-        selectedJsonPrompt={selectedJsonPrompt}
-        onJsonPromptChange={setSelectedJsonPrompt}
-        influencePrompt={influencePrompt}
-        onInfluencePromptChange={setInfluencePrompt}
         onGridChange={setIsGrid}
         adCopy={adCopy}
         onGenerate={handleGenerate}
         isGenerating={isGenerating}
+        userId={user?.id || null}
       />
       {isGenerating && showLoadingOverlay && (
         <LoadingOverlay progress={task?.progress || 0} onDismiss={() => setShowLoadingOverlay(false)} />
