@@ -223,6 +223,7 @@ export default function Index() {
         selectedProject={selectedProject}
         onSelectProject={setSelectedProject}
         onAddProject={addProject}
+        onDeleteProject={deleteProject}
         scrapedProduct={scrapedProduct}
         onScraped={setScrapedProduct}
         productImages={productImages}
