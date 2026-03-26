@@ -51,14 +51,6 @@ export interface ClientLastSettings {
   styleSubOptions?: Record<string, string>;
 }
 
-export interface Client {
-  id: string;
-  name: string;
-  created_at: string;
-  user_id: string;
-  last_settings?: ClientLastSettings | null;
-}
-
 export interface BrandAsset {
   id: string;
   client_id: string;
