@@ -51,7 +51,7 @@ export function InputColumn({
           clients={clients} selectedClient={selectedClient}
           onSelectClient={onSelectClient} onAddClient={onAddClient} onDeleteClient={onDeleteClient}
           projects={projects} selectedProject={selectedProject}
-          onSelectProject={onSelectProject} onAddProject={onAddProject}
+          onSelectProject={onSelectProject} onAddProject={onAddProject} onDeleteProject={onDeleteProject}
         />
 
         {/* URL Scraper */}

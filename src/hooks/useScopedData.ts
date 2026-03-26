@@ -44,7 +44,7 @@ export function useScopedData(userId: string | null, clientId: string | null, pr
 
   const fetchPrompts = useCallback(async () => {
     if (!userId) return;
-    let query = supabase.from('saved_prompts' as any).select('*').eq('user_id', userId);
+    let query = (supabase.from('saved_prompts' as any) as any).select('*').eq('user_id', userId);
 
     const scopeFilters: string[] = ['scope.eq.global'];
     if (clientId) scopeFilters.push(`and(scope.eq.client,client_id.eq.${clientId})`);
