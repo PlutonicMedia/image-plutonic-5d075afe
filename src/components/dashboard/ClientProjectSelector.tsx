@@ -19,6 +19,7 @@ interface ClientProjectSelectorProps {
   selectedProject: Project | null;
   onSelectProject: (p: Project | null) => void;
   onAddProject: (name: string) => void;
+  onDeleteProject: (id: string) => void;
 }
 
 export function ClientProjectSelector({
