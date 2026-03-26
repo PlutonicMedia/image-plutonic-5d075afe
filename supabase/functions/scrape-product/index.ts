@@ -152,9 +152,9 @@ serve(async (req) => {
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
       return new Response(JSON.stringify({
-        product_name: "Unknown Product",
-        description: "AI could not parse product data. Edit manually.",
-        usps: ["Quality craftsmanship", "Premium materials", "Modern design"],
+        product_name: "",
+        description: "",
+        usps: [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
