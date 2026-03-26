@@ -230,6 +230,7 @@ export default function Index() {
         onProductImagesChange={setProductImages}
         modelImages={modelImages}
         onModelImagesChange={setModelImages}
+        onSignOut={handleSignOut}
         images={allResults}
         onImageClick={setLightboxImage}
         onDownloadSelected={handleDownloadSelected}
